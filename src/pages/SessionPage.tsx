@@ -238,7 +238,7 @@ const SessionPage = () => {
     if (!session?.items.length) return null
 
     const taxableItems = session.items.map(item => ({
-      amount: item.amount,
+      amount: item.totalAmount,
       hasSST: item.hasSst,
       hasServiceCharge: false, // Can be enhanced later
       isExempt: false
@@ -255,7 +255,7 @@ const SessionPage = () => {
       const paid = session.items
         .filter(item => item.paidBy === participant.id)
         .reduce((sum, item) => {
-          const amount = Number(item.amount) || 0
+          const amount = Number(item.totalAmount) || 0
           const itemTotal = item.hasSst ? amount * 1.06 : amount
           return sum + itemTotal
         }, 0)
@@ -263,7 +263,7 @@ const SessionPage = () => {
       const owes = session.items
         .filter(item => item.sharedBy.includes(participant.id))
         .reduce((sum, item) => {
-          const amount = Number(item.amount) || 0
+          const amount = Number(item.totalAmount) || 0
           const itemTotal = item.hasSst ? amount * 1.06 : amount
           const shareCount = item.sharedBy.length || 1
           return sum + (itemTotal / shareCount)
@@ -509,7 +509,7 @@ const SessionPage = () => {
                         <div className="flex-1">
                           <div className="font-medium">{item.name}</div>
                           <div className="text-sm text-gray-600">
-                            {formatCurrency(item.amount)}
+                            {formatCurrency(item.totalAmount)}
                           </div>
                           <div className="text-xs text-gray-500">
                             Paid by: {session.participants.find(p => p.id === item.paidBy)?.name}
@@ -552,13 +552,13 @@ const SessionPage = () => {
                   <div>
                     <div className="text-sm text-gray-600">Total Amount</div>
                     <div className="text-lg font-bold">
-                      {formatCurrency(session.items.reduce((sum, item) => sum + item.amount, 0))}
+                      {formatCurrency(session.items.reduce((sum, item) => sum + item.totalAmount, 0))}
                     </div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-600">Total with Taxes</div>
                     <div className="text-lg font-bold">
-                      {enhancedTaxBreakdown ? formatCurrency(enhancedTaxBreakdown.total) : formatCurrency(session.items.reduce((sum, item) => sum + (item.hasSst ? item.amount * 1.06 : item.amount), 0))}
+                      {enhancedTaxBreakdown ? formatCurrency(enhancedTaxBreakdown.total) : formatCurrency(session.items.reduce((sum, item) => sum + (item.hasSst ? item.totalAmount * 1.06 : item.totalAmount), 0))}
                     </div>
                   </div>
                 </div>
@@ -571,11 +571,11 @@ const SessionPage = () => {
                     {session.participants.map((participant) => {
                       const paid = session.items
                         .filter(item => item.paidBy === participant.id)
-                        .reduce((sum, item) => sum + (item.hasSst ? item.amount * 1.06 : item.amount), 0)
+                        .reduce((sum, item) => sum + (item.hasSst ? item.totalAmount * 1.06 : item.totalAmount), 0)
                       
                       const owes = session.items
                         .filter(item => item.sharedBy.includes(participant.id))
-                        .reduce((sum, item) => sum + (item.hasSst ? item.amount * 1.06 : item.amount) / item.sharedBy.length, 0)
+                        .reduce((sum, item) => sum + (item.hasSst ? item.totalAmount * 1.06 : item.totalAmount) / item.sharedBy.length, 0)
                       
                       const balance = paid - owes
 
