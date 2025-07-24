@@ -62,22 +62,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(session?.user ?? null)
         setLoading(false)
 
-        // Handle auth events
+        // Only show toasts for explicit user actions, not automatic events
         switch (event) {
-          case 'SIGNED_IN':
-            toast.success('Successfully signed in!')
-            break
-          case 'SIGNED_OUT':
-            toast.success('Successfully signed out!')
-            break
           case 'TOKEN_REFRESHED':
             console.log('Token refreshed')
             break
           case 'USER_UPDATED':
-            toast.success('Profile updated successfully!')
+            console.log('User updated')
             break
           case 'PASSWORD_RECOVERY':
-            toast.success('Password recovery email sent!')
+            console.log('Password recovery initiated')
             break
         }
       }
@@ -134,6 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { error }
       }
 
+      toast.success('Successfully signed in!')
       return { error: null }
     } catch (error) {
       console.error('Error in signIn:', error)
@@ -183,6 +178,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { error }
       }
 
+      toast.success('Successfully signed out!')
       return { error: null }
     } catch (error) {
       console.error('Error in signOut:', error)

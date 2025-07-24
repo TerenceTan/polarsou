@@ -594,6 +594,31 @@ const SessionPage = () => {
                     })}
                   </div>
                 </div>
+
+                <Separator />
+
+                {/* Payment Methods */}
+                <div>
+                  <h3 className="font-medium mb-3">Payment Methods</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="p-2 bg-blue-50 rounded border">
+                      <div className="font-medium text-blue-800">TouchNGo</div>
+                      <div className="text-blue-600">QR Payment</div>
+                    </div>
+                    <div className="p-2 bg-green-50 rounded border">
+                      <div className="font-medium text-green-800">GrabPay</div>
+                      <div className="text-green-600">QR Payment</div>
+                    </div>
+                    <div className="p-2 bg-purple-50 rounded border">
+                      <div className="font-medium text-purple-800">DuitNow QR</div>
+                      <div className="text-purple-600">Bank Transfer</div>
+                    </div>
+                    <div className="p-2 bg-orange-50 rounded border">
+                      <div className="font-medium text-orange-800">Bank Transfer</div>
+                      <div className="text-orange-600">Manual</div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

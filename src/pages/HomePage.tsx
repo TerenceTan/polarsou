@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { sessionService, participantService, getServiceStatus } from '@/services'
 import { useAuth } from '@/contexts/AuthContext'
 import AuthModal from '@/components/auth/AuthModal'
+import Footer from '@/components/Footer'
 import { toast } from 'sonner'
 
 const HomePage = () => {
@@ -34,9 +35,10 @@ const HomePage = () => {
       return
     }
 
-    // For non-logged in users, require organizer name
-    if (!user && !organizerName.trim()) {
-      toast.error('Please enter your name to create a session')
+    // Require user to be logged in
+    if (!user) {
+      toast.error('Please sign in to create a session')
+      setShowAuthModal(true)
       return
     }
 
@@ -44,8 +46,8 @@ const HomePage = () => {
     try {
       const session = await sessionService.create({
         name: sessionName.trim(),
-        organizerName: organizerName.trim() || user?.user_metadata?.full_name || undefined,
-        userId: user?.id || undefined
+        organizerName: user.user_metadata?.full_name || user.email || 'Organizer',
+        userId: user.id
       })
 
       // Auto-add the organizer as a participant
@@ -180,33 +182,29 @@ const HomePage = () => {
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="organizerName">Your Name {user ? '(Optional)' : '*'}</Label>
-            <Input
-              id="organizerName"
-              placeholder={user?.user_metadata?.full_name || "e.g., John Doe"}
-              value={organizerName}
-              onChange={(e) => setOrganizerName(e.target.value)}
-              disabled={isCreating}
-              required={!user}
-            />
-            {user ? (
+          {!user && (
+            <div className="space-y-2">
+              <Label htmlFor="organizerName">Your Name *</Label>
+              <Input
+                id="organizerName"
+                placeholder="e.g., John Doe"
+                value={organizerName}
+                onChange={(e) => setOrganizerName(e.target.value)}
+                disabled={isCreating}
+                required
+              />
               <p className="text-xs text-gray-500">
-                Using your profile name: {user.user_metadata?.full_name || user.email}
+                Required to create a session. Please sign in to save your sessions.
               </p>
-            ) : (
-              <p className="text-xs text-gray-500">
-                Required to create a session as a guest
-              </p>
-            )}
-          </div>
+            </div>
+          )}
 
           <Button 
             onClick={handleCreateSession}
             className="w-full"
-            disabled={!sessionName.trim() || (!user && !organizerName.trim()) || isCreating}
+            disabled={!sessionName.trim() || isCreating}
           >
-            {isCreating ? 'Creating...' : 'Create Session'}
+            {isCreating ? 'Creating...' : user ? 'Create Session' : 'Sign In to Create Session'}
           </Button>
 
           {!user && (
@@ -262,6 +260,8 @@ const HomePage = () => {
         onClose={() => setShowAuthModal(false)}
         initialMode={authMode}
       />
+      
+      <Footer />
     </div>
   )
 }
