@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
+import SessionHistory from '@/components/session/SessionHistory'
 
 const ProfilePage = () => {
   const navigate = useNavigate()
@@ -236,7 +237,13 @@ const ProfilePage = () => {
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={() => navigate('/sessions')}
+                onClick={() => {
+                  // Scroll to session history section
+                  const historyElement = document.getElementById('session-history')
+                  if (historyElement) {
+                    historyElement.scrollIntoView({ behavior: 'smooth' })
+                  }
+                }}
               >
                 <History className="h-4 w-4 mr-2" />
                 Session History
@@ -290,6 +297,11 @@ const ProfilePage = () => {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Session History */}
+      <div id="session-history" className="mt-8">
+        <SessionHistory userId={user.id} />
       </div>
     </div>
   )

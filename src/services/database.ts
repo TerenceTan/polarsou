@@ -101,6 +101,11 @@ export const sessionService = {
     return sessions.map(this.mapSessionFromDb)
   },
 
+  // Get sessions by user (alias for getByOrganizer)
+  async getByUser(userId: string): Promise<Session[]> {
+    return this.getByOrganizer(userId)
+  },
+
   // Map database session to app session
   mapSessionFromDb(dbSession: any): Session {
     return {
@@ -181,14 +186,19 @@ export const participantService = {
 
   // Map database participant to app participant
   mapParticipantFromDb(dbParticipant: any): Participant {
+    // Ensure all numeric values are properly parsed and default to 0 if invalid
+    const totalOwed = parseFloat(dbParticipant.total_owed || '0') || 0
+    const totalPaid = parseFloat(dbParticipant.total_paid || '0') || 0
+    const netAmount = parseFloat(dbParticipant.net_amount || '0') || 0
+
     return {
       id: dbParticipant.id,
-      name: dbParticipant.name,
+      name: dbParticipant.name || '',
       userId: dbParticipant.user_id,
       sessionId: dbParticipant.session_id,
-      totalOwed: parseFloat(dbParticipant.total_owed || '0'),
-      totalPaid: parseFloat(dbParticipant.total_paid || '0'),
-      netAmount: parseFloat(dbParticipant.net_amount || '0')
+      totalOwed,
+      totalPaid,
+      netAmount
     }
   }
 }
@@ -197,14 +207,24 @@ export const participantService = {
 export const itemService = {
   // Add item to session
   async add(sessionId: string, data: AddItemForm): Promise<BillItem> {
+    // Ensure amount is a valid number
+    const amount = parseFloat(String(data.amount)) || 0
+    if (amount <= 0) {
+      throw new Error('Invalid amount: must be greater than 0')
+    }
+
+    const sharedByCount = data.sharedBy?.length || 1
+    const sstAmount = data.hasSst ? amount * 0.06 : 0
+    const perPersonAmount = amount / sharedByCount
+
     const itemData = {
       session_id: sessionId,
-      name: data.name,
-      total_amount: data.amount,
+      name: data.name || '',
+      total_amount: amount,
       paid_by: data.paidBy,
-      has_sst: data.hasSst,
-      sst_amount: data.hasSst ? data.amount * 0.06 : 0,
-      per_person_amount: data.amount / data.sharedBy.length
+      has_sst: Boolean(data.hasSst),
+      sst_amount: sstAmount,
+      per_person_amount: perPersonAmount
     }
 
     const { data: item, error } = await supabase
@@ -216,18 +236,20 @@ export const itemService = {
     if (error) throw error
 
     // Add participants who shared this item
-    const participantData = data.sharedBy.map(participantId => ({
-      bill_item_id: item.id,
-      participant_id: participantId
-    }))
+    if (data.sharedBy && data.sharedBy.length > 0) {
+      const participantData = data.sharedBy.map(participantId => ({
+        bill_item_id: item.id,
+        participant_id: participantId
+      }))
 
-    const { error: participantError } = await supabase
-      .from('bill_item_participants')
-      .insert(participantData)
+      const { error: participantError } = await supabase
+        .from('bill_item_participants')
+        .insert(participantData)
 
-    if (participantError) throw participantError
+      if (participantError) throw participantError
+    }
 
-    return this.mapItemFromDb({ ...item, shared_by: data.sharedBy })
+    return this.mapItemFromDb({ ...item, shared_by: data.sharedBy || [] })
   },
 
   // Update item
@@ -305,16 +327,21 @@ export const itemService = {
 
   // Map database item to app item
   mapItemFromDb(dbItem: any): BillItem {
+    // Ensure all numeric values are properly parsed and default to 0 if invalid
+    const totalAmount = parseFloat(dbItem.total_amount) || 0
+    const sstAmount = parseFloat(dbItem.sst_amount || '0') || 0
+    const perPersonAmount = parseFloat(dbItem.per_person_amount) || 0
+
     return {
       id: dbItem.id,
       sessionId: dbItem.session_id,
-      name: dbItem.name,
-      totalAmount: parseFloat(dbItem.total_amount),
+      name: dbItem.name || '',
+      totalAmount,
       paidBy: dbItem.paid_by,
       sharedBy: dbItem.bill_item_participants?.map((p: any) => p.participant_id) || dbItem.shared_by || [],
-      hasSst: dbItem.has_sst,
-      sstAmount: parseFloat(dbItem.sst_amount || '0'),
-      perPersonAmount: parseFloat(dbItem.per_person_amount),
+      hasSst: Boolean(dbItem.has_sst),
+      sstAmount,
+      perPersonAmount,
       createdAt: new Date(dbItem.created_at)
     }
   }
