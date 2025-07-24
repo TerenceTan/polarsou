@@ -351,12 +351,30 @@ export const itemService = {
 export const paymentService = {
   // Add payment method
   async add(data: PaymentMethodForm & { userId?: string; sessionId?: string }): Promise<PaymentMethod> {
+    let qrCodeUrl = null
+    
+    // Handle QR code file upload
+    if (data.type === 'qr_code' && data.qrCodeFile) {
+      try {
+        // Convert file to base64 data URL for simple storage
+        qrCodeUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(data.qrCodeFile!)
+        })
+      } catch (error) {
+        console.error('Error processing QR code file:', error)
+        throw new Error('Failed to process QR code image')
+      }
+    }
+
     const paymentData = {
       user_id: data.userId || null,
       session_id: data.sessionId || null,
       type: data.type,
       display_name: data.displayName,
-      qr_code_url: data.type === 'qr_code' ? 'placeholder-url' : null, // TODO: Handle file upload
+      qr_code_url: qrCodeUrl,
       duitnow_id: data.duitnowId || null,
       bank_name: data.bankName || null,
       account_number: data.accountNumber || null,

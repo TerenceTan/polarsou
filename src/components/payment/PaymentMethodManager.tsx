@@ -30,7 +30,8 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
     duitnowId: '',
     bankName: '',
     accountNumber: '',
-    accountHolder: ''
+    accountHolder: '',
+    qrCodeFile: undefined
   })
 
   useEffect(() => {
@@ -69,6 +70,11 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
       return
     }
 
+    if (formData.type === 'qr_code' && !formData.qrCodeFile) {
+      toast.error('Please upload a QR code image')
+      return
+    }
+
     if (formData.type === 'bank_transfer' && (!formData.bankName?.trim() || !formData.accountNumber?.trim())) {
       toast.error('Please enter bank details')
       return
@@ -92,7 +98,8 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
         duitnowId: '',
         bankName: '',
         accountNumber: '',
-        accountHolder: ''
+        accountHolder: '',
+        qrCodeFile: undefined
       })
       setShowAddForm(false)
       toast.success('Payment method added successfully!')
@@ -159,25 +166,66 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
         {paymentMethods.length > 0 && (
           <div className="space-y-3">
             {paymentMethods.map((method) => (
-              <div key={method.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  {getPaymentMethodIcon(method.type)}
-                  <div>
-                    <div className="font-medium">{method.displayName}</div>
-                    <div className="text-sm text-gray-500">
-                      {getPaymentMethodLabel(method.type)}
-                      {method.details.duitnowId && ` • ${method.details.duitnowId}`}
-                      {method.details.bankName && ` • ${method.details.bankName}`}
+              <div key={method.id} className="p-3 border rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {getPaymentMethodIcon(method.type)}
+                    <div>
+                      <div className="font-medium">{method.displayName}</div>
+                      <div className="text-sm text-gray-500">
+                        {getPaymentMethodLabel(method.type)}
+                        {method.details.duitnowId && ` • ${method.details.duitnowId}`}
+                        {method.details.bankName && ` • ${method.details.bankName}`}
+                      </div>
                     </div>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemovePaymentMethod(method.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemovePaymentMethod(method.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                
+                {/* Display QR Code if available */}
+                {method.type === 'qr_code' && method.details.qrCodeUrl && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium mb-2">QR Code for Payment:</div>
+                    <img
+                      src={method.details.qrCodeUrl}
+                      alt={`QR Code for ${method.displayName}`}
+                      className="max-w-48 max-h-48 object-contain border rounded bg-white mx-auto block"
+                    />
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Participants can scan this QR code to pay
+                    </p>
+                  </div>
+                )}
+                
+                {/* Display Bank Details if available */}
+                {method.type === 'bank_transfer' && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium mb-2">Bank Transfer Details:</div>
+                    <div className="space-y-1 text-sm">
+                      <div><span className="font-medium">Bank:</span> {method.details.bankName}</div>
+                      <div><span className="font-medium">Account:</span> {method.details.accountNumber}</div>
+                      {method.details.accountHolder && (
+                        <div><span className="font-medium">Name:</span> {method.details.accountHolder}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Display DuitNow Details if available */}
+                {method.type === 'duitnow' && method.details.duitnowId && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium mb-2">DuitNow Transfer:</div>
+                    <div className="text-sm">
+                      <span className="font-medium">ID:</span> {method.details.duitnowId}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -260,8 +308,45 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
             {formData.type === 'qr_code' && (
               <div className="space-y-2">
                 <Label>QR Code Upload</Label>
-                <div className="p-4 border-2 border-dashed rounded-lg text-center text-gray-500">
-                  QR Code upload functionality coming soon
+                <div className="space-y-3">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        // Validate file type
+                        if (!file.type.startsWith('image/')) {
+                          toast.error('Please select an image file')
+                          return
+                        }
+                        // Validate file size (max 5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                          toast.error('File size must be less than 5MB')
+                          return
+                        }
+                        setFormData(prev => ({ ...prev, qrCodeFile: file }))
+                      }
+                    }}
+                  />
+                  {formData.qrCodeFile && (
+                    <div className="p-3 border rounded-lg bg-green-50">
+                      <div className="flex items-center gap-2 text-sm text-green-700">
+                        <QrCode className="h-4 w-4" />
+                        <span>QR Code selected: {formData.qrCodeFile.name}</span>
+                      </div>
+                      <div className="mt-2">
+                        <img
+                          src={URL.createObjectURL(formData.qrCodeFile)}
+                          alt="QR Code Preview"
+                          className="max-w-32 max-h-32 object-contain border rounded"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500">
+                    Upload a QR code image (PNG, JPG) for participants to scan and pay
+                  </p>
                 </div>
               </div>
             )}
