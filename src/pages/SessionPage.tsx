@@ -34,10 +34,12 @@ import MalaysianTaxCalculator from '@/utils/malaysian/taxCalculator'
 import PaymentInstructions from '@/components/payment/PaymentInstructions'
 import PaymentMethodManager from '@/components/payment/PaymentMethodManager'
 import MalaysianPaymentService from '@/utils/payment/malaysianPayments'
+import { useAuth } from '@/contexts/AuthContext'
 
 const SessionPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
   
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
@@ -602,6 +604,7 @@ const SessionPage = () => {
                 <div>
                   <PaymentMethodManager 
                     sessionId={sessionId}
+                    userId={user?.id}
                     onPaymentMethodsChange={(methods) => {
                       // Update session with new payment methods if needed
                       console.log('Payment methods updated:', methods)

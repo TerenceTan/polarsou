@@ -23,11 +23,13 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import SessionHistory from '@/components/session/SessionHistory'
+import PaymentMethodManager from '@/components/payment/PaymentMethodManager'
 
 const ProfilePage = () => {
   const navigate = useNavigate()
   const { user, signOut, updateProfile, loading } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
+  const [showPaymentMethods, setShowPaymentMethods] = useState(false)
   const [formData, setFormData] = useState({
     fullName: user?.user_metadata?.full_name || '',
     preferredCurrency: user?.user_metadata?.preferred_currency || 'MYR',
@@ -222,6 +224,17 @@ const ProfilePage = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Payment Methods Management */}
+          {showPaymentMethods && (
+            <PaymentMethodManager 
+              userId={user.id}
+              onPaymentMethodsChange={(methods) => {
+                // Optional: Update local state or show success message
+                console.log('Payment methods updated:', methods)
+              }}
+            />
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -259,7 +272,7 @@ const ProfilePage = () => {
               <Button 
                 variant="outline" 
                 className="w-full justify-start"
-                onClick={() => toast.info('Feature coming soon!')}
+                onClick={() => setShowPaymentMethods(!showPaymentMethods)}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Payment Methods

@@ -43,10 +43,16 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
       setLoading(true)
       let methods: PaymentMethod[] = []
       
+      // Load session-specific payment methods
       if (sessionId) {
-        methods = await paymentService.getBySession(sessionId)
-      } else if (userId) {
-        methods = await paymentService.getByUser(userId)
+        const sessionMethods = await paymentService.getBySession(sessionId)
+        methods = [...methods, ...sessionMethods]
+      }
+      
+      // Load user's saved payment methods
+      if (userId) {
+        const userMethods = await paymentService.getByUser(userId)
+        methods = [...methods, ...userMethods]
       }
       
       setPaymentMethods(methods)
@@ -158,7 +164,12 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
           Payment Methods
         </CardTitle>
         <CardDescription>
-          Add payment methods for easy collection from participants
+          {sessionId && userId 
+            ? 'Manage payment methods for this session and your saved methods'
+            : sessionId 
+            ? 'Add payment methods for this session'
+            : 'Manage your saved payment methods'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -171,7 +182,15 @@ const PaymentMethodManager: React.FC<PaymentMethodManagerProps> = ({
                   <div className="flex items-center gap-3">
                     {getPaymentMethodIcon(method.type)}
                     <div>
-                      <div className="font-medium">{method.displayName}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{method.displayName}</span>
+                        {method.sessionId && method.userId && (
+                          <Badge variant="secondary" className="text-xs">Session</Badge>
+                        )}
+                        {method.userId && !method.sessionId && (
+                          <Badge variant="outline" className="text-xs">Saved</Badge>
+                        )}
+                      </div>
                       <div className="text-sm text-gray-500">
                         {getPaymentMethodLabel(method.type)}
                         {method.details.duitnowId && ` • ${method.details.duitnowId}`}
