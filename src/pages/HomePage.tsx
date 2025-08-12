@@ -150,7 +150,7 @@ const HomePage = () => {
         </div>
         <div className="flex flex-col items-center p-4">
           <Users className="h-8 w-8 text-green-600 mb-2" />
-          <span className="text-sm font-medium">No Signup Required</span>
+          <span className="text-sm font-medium">Easy Collaboration</span>
         </div>
         <div className="flex flex-col items-center p-4">
           <QrCode className="h-8 w-8 text-purple-600 mb-2" />
@@ -183,18 +183,9 @@ const HomePage = () => {
           </div>
           
           {!user && (
-            <div className="space-y-2">
-              <Label htmlFor="organizerName">Your Name *</Label>
-              <Input
-                id="organizerName"
-                placeholder="e.g., John Doe"
-                value={organizerName}
-                onChange={(e) => setOrganizerName(e.target.value)}
-                disabled={isCreating}
-                required
-              />
-              <p className="text-xs text-gray-500">
-                Required to create a session. Please sign in to save your sessions.
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Sign in required:</strong> You need to sign in to create and manage bill splitting sessions.
               </p>
             </div>
           )}
